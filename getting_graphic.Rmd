@@ -1,0 +1,181 @@
+---
+title: "Chapter 3 Getting Graphic"
+author: "Wendy Graham"
+date: "2025-07-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+
+```{r}
+install.packages("GGally")
+library(ggplot2)
+library(GGally)
+```
+
+
+## Finding Patterns
+Data often resides in long, complex tables. Often, you have to visualize only a portion of the table to find a pattern or a trend. A good example is the Cars93 data frame, which resides in the MASS package.
+
+```{r cars}
+
+head(Cars93)
+```
+
+## Histograms
+
+ When creating a histogram, R figures out the best number of columns for a nice-looking appearance. Here, R decided that 12 is a pretty good number. You can vary the number of columns by adding an argument called breaks and setting its value. R doesn't always give you the value you set. Instead, it provides something close to that value and tries to maintain a nice-looking appearance. Add this argument and set its value (breaks = 4, for example), and you’ll see what I mean.
+
+```{r histogram}
+hist(Cars93$Price)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r title, }
+hist(Cars93$Price, xlab="Price (x $1,000)", xlim = c(0,70), 
+                                   main = "Prices of 93 Models of 1993 Cars")
+```
+
+
+```{r}
+ hist(Cars93$Price, xlab="Price (x $1,000)", xlim = c(0,70), 
+                           main = "Prices of 93 Models of 1993
+  Cars",probability 
+                           = TRUE
+  )
+ lines(density(Cars93$Price))
+```
+## Bar Plot
+
+```{r}
+barplot(table(Cars93$Type),ylim=c(0,25), xlab="Type", 
+                           ylab="Frequency", axis.lty = "solid",
+  space = .25)
+```
+## Pie Graphs
+
+```{r}
+pie(table(Cars93$Type))
+```
+
+##Scatter Plots
+R enables you to change the symbol that depicts the points in the graph.
+
+To change the symbol, which is called the plotting character, set the argument pch. R has a set of built-in numerical values (0–25) for pch that correspond to a set of symbols. The values 0–15 correspond to unfilled shapes, and 16–25 are filled.
+
+You’re not limited to the built-in numerical values for pch. Here, for example, is an interesting touch: To help find patterns in the data, you can draw each point in the plot as the number of cylinders in the corresponding car rather than as a symbol.
+
+To do that, you have to be careful about how you set pch. You can't just assign Cars93$.Cylinders as the value. You have to make sure that what you pass to pch is a character (like “3”, “4” or “8”) rather than a number (like 3, 4, or 8). Another complication is that the data contains “rotary” as one value for Cylinders. To force the Cylinders-value to be a character, you apply as.character() to Cars93$Cylinders:
+
+The tilde operator (~) means “depends on.”
+
+```{r}
+ggplot(Cars93, aes(x=Horsepower, y=MPG.city, label=Cylinders)) +
+     geom_text() +
+     theme_bw() +
+     theme(panel.grid=element_blank())
+
+```
+
+## Scatterplot Matrix
+
+A nice way of visualizing relationships among more than two variables. 
+
+```{r scatterplot matrix}
+#create a data frame that consist of just three variables to plot
+
+cars.subset <- subset(Cars93, select = c(MPG.city,Price,Horsepower))
+
+#scatterplot matrix
+pairs(cars.subset)
+
+```
+
+## Scatter Plot Matrix with other variables
+
+This capability isn't limited to three variables, nor to continuous ones. To see what happens with a different type of variable, add Cylinders to the vector for select and then use the pairs() function on cars.subset.
+
+```{r}
+#create a data frame that consist of just three variables to plot
+
+cars.subset <- subset(Cars93, select = c(MPG.city,Price,Horsepower,Cylinders))
+
+#scatterplot matrix
+pairs(cars.subset)
+```
+
+##Boxplots
+$ indicates each component of a list
+
+```{r}
+#boxplot(Cars93$Horsepower ~ Cars93$Cylinders, xlab="Cylinders",ylab="Horsepower")
+
+boxplot(Horsepower ~ Cylinders, data = Cars93, 
+                            xlab="Cylinders", ylab="Horsepower")
+```
+
+#ggplot2
+If you really want to shine at visualization, it's a good idea to learn ggplot2. Created by R-megastar Hadley Wickham, the “gg” in the package name stands for “grammar of graphics” and that’s a good indicator of what’s ahead. That’s also the title of the book (by Leland Wilkinson) that is the source of the concepts for this package.
+
+## ggplot2 Histograms
+
+```{r ggplot histograms}
+ggplot(Cars93, aes(x=Price)) +
+     geom_histogram(binwidth=5,color="purple",fill="white") +
+     labs(x = "Price (x $1000)", y="Frequency", title="Prices of 93 Models of 1993 Cars")
+```
+
+## ggplot2 Bar plots
+Drawing a bar plot in ggplot2 is a little easier than drawing one in base R: It’s not necessary to first create a table in order to draw the graph. You also don’t need to specify an aesthetic mapping for y. This time, the geom function is geom_bar(), and the rules of the grammar tell ggplot2 to do the necessary work with the data and then draw the plot:
+
+```{r}
+ggplot(Cars93, aes(x=Type))+
+geom_bar() +
+labs(y="Frequency", title="Car Type and Frequency in Cars93")
+```
+
+## Scatterpots
+A scatterplot is a helpful way to show the relationship between two variables, like horsepower and miles per gallon for city driving. And ggplot() is a helpful way to draw the scatterplot. If you've been following along, the grammar of this will be easy for you:
+
+```{r}
+ggplot(Cars93, aes(x=Horsepower, y=MPG.city, label=Cylinders)) +
+     geom_text() +
+   labs(y="Miles per Gallon", title=" City MPG vs Horsepower: Cylinder Count as Data Labels")+
+     theme_bw() +
+     theme(panel.grid=element_blank())
+```
+
+## ggplot2 Scatterplot Matrix
+
+A matrix of scatterplots shows the pairwise relationships among more than two variables.
+
+The ggplot2 package had a function called plotpairs() that did something similar, but not any more. GGally, a package built on ggplot2, provides ggpairs() to draw scatterplot matrices, and it does this in a flamboyant way.
+
+The GGally package isn't on the Packages tab. You have to select Install and type GGally in the Install Packages dialog box. When it appears on the Packages tab, select the check box next to it.
+
+```{r GGally}
+cars.subset <- subset(Cars93, select = c(MPG.city,Price,
+  Horsepower))
+
+ ggpairs(cars.subset)
+```
+
+## Boxplots
+Statisticians use boxplots to quickly show how groups differ from one another.
+
+Deal with overplotting is to randomly reposition the points so as to reveal them but not change what they represent. This is called jittering. And ggplot2 has a geom function for that: geom_jitter(). Adding this function to the code
+
+```{r}
+ggplot(Cars93, aes(x=Cylinders,y=Horsepower)) +
+     geom_boxplot()+
+     geom_point()+
+     geom_jitter()
+```
+
+ 
