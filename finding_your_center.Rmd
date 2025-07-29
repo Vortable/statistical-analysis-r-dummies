@@ -1,0 +1,186 @@
+---
+title: "Chapter 4 Finding Your Center"
+author: "Wendy Graham"
+date: "2025-07-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+```{r}
+install.packages("modeest")
+
+library(MASS)
+library(ggplot2)
+library(modeest)
+```
+
+
+
+## Averages
+
+Mean = Sum of Numbers/Amount of Numbers you Added up
+Mean = Sum of X/N
+Mean =  ∑X/N
+μ =  ∑X/N
+
+Statisticians also use an abbreviation for Sum of — the uppercase Greek letter for S. Pronounced “sigma,” it looks like this: ∑. So the formula with the sigma is
+
+
+
+```{r Mean}
+heights <- c(36, 42, 43, 37, 40, 45)
+ mean(heights)
+```
+
+## Finding Averages of Components with $
+
+Data for a sample of 93 cars from 1993. It’s in the MASS package. So make sure you have the MASS package in your library. 
+
+```{r components}
+Horsepower.USA <- Cars93$Horsepower[Cars93$Origin == "USA"]
+print("Mean of Horsepower in USA is")
+mean(Horsepower.USA)
+
+Horsepower.NonUSA <- Cars93$Horsepower[Cars93$Origin ==
+  "non-USA"]
+print("Mean of Horsepower outside of  USA is")
+mean(Horsepower.NonUSA)
+```
+
+# Eliminate $-signs using with()
+
+```{r with function}
+print("Mean of Horsepower in USA is")
+with(Cars93, mean(Horsepower[Origin == "USA"]))
+
+print("The average horsepower of USA 4-cylinder cars")
+with(Cars93, mean(Horsepower[Origin == "USA" &
+   Cylinders ==4]))
+```
+
+## Exploring the 
+
+Faceting splits the data according to a nominal variable — like Origin, which is either “USA” or “non-USA.” 
+
+The tilde operator (~) means “depends on,” so think of Origin as an independent variable. 
+
+```{r}
+ggplot(Cars93, aes(x=Horsepower)) +
+geom_histogram(color="black", fill="white",binwidth = 10)+
+facet_wrap(~Origin)
+```
+
+## Outliers: The flaw of averages
+
+An outlier is an extreme value in a dataset. If the dataset is a sample and you're trying to estimate the population mean, the outlier might bias the estimate.
+
+Statisticians deal with outliers by trimming the mean — eliminating extreme values at the low end and the high end before calculating the sample mean. The amount of trim is a percentage, like the upper and lower 5 percent of the scores.
+
+```{r trimming the mean}
+"Mean of Horsepower in USA is"
+mean(Horsepower.USA, trim =.05)
+```
+
+## Geometric Mean
+
+Suppose you have a 5-year investment that yields these percentages: 10 percent, 15 percent, 10 percent, 20 percent, and 5 percent. (Yes, yes. I know. This is fiction.) What’s the average annual rate of return?
+
+Your first guess might be to average those percentages. That average is 12 percent. And it would be incorrect.
+
+Why? It misses an important point. At the end of the first year, you multiply your investment by 1.10 — you don’t add 1.10 to your investment. At the end of the second year, you multiply the first-year result by 1.15, and so on.
+
+The arithmetic mean won’t give you the average rate of return. Instead, you calculate that average this way:
+
+
+The average rate of return is a little less than 12 percent. This kind of average is called the geometric mean.
+
+In this example, the geometric mean is the fifth root of the product of five numbers. Is it always the nth root of the product of n numbers?
+
+prod() function to calculate the product of the numbers in the vector, and use the length() function to calculate how many numbers are in the vector.
+
+Average that indicates the central tendency of a set of numbers by using the product of their values. It’s especially useful when comparing things like growth rates, ratios, or percentages.
+
+```{r geometric mean}
+invest <- c(1.10,1.15,1.10,1.20,1.05)
+gm.invest <- prod(invest)^(1/(length(invest)))
+print("The average rate of return is")
+gm.invest
+```
+
+## Harmonic Mean
+The harmonic mean is a type of average that is useful when you're dealing with rates or ratios, like speed, efficiency, or density. It’s especially helpful when the values you're averaging are inversely related to the quantity you're interested in.
+
+Harmonic Mean =
+n ÷ (∑ᵢ₌₁ⁿ 1⁄xᵢ)
+
+Where:
+
+n is the number of values
+xᵢ is the i-th value in the dataset
+
+Harmonic Mean= 
+n ÷ (1/X1 + 1/X2 + ... +1/Xn)
+
+```{r Harmonic Mean}
+speeds <- c(30,50)
+
+#reciprocals vector
+1/speeds
+
+hm.speeds <- 1/mean(1/speeds)
+print("The average speed is")
+hm.speeds
+```
+
+##Medians: Caught in the Middle
+
+Median is a fancy name for a simple concept: It’s the middle value in a group of numbers. Arrange the numbers in order, and the median is the value below which half the scores fall and above which half the scores fall
+
+```{r median}
+#reading speed
+reading.speeds <- c(56, 78, 45, 49, 55, 62)
+print("Mean reading speed")
+mean(reading.speeds)
+
+reading.speeds.new <- 
+                 replace(reading.speeds,reading.speeds == 78,180)
+reading.speeds.new
+
+print("Mean reading speed with outliers")
+mean(reading.speeds.new)
+
+print("Median - sorted reading speeds")
+sort(reading.speeds)
+sort(reading.speeds.new)
+
+print("Median Reading Speeds")
+median(reading.speeds)
+median(reading.speeds.new)
+
+```
+With larger datasets, you might encounter replication of scores. In any case, the median is still the middle value. For example, here are the horsepowers for 4-cylinder cars in
+
+```{r Cars93}
+Horsepower.Four <- with(Cars93,Horsepower[Cylinders == 4])
+sort(Horsepower.Four)
+median(Horsepower.Four)
+
+```
+
+## Statistics à la Mode
+One more measure of central tendency, the mode, is important. It’s the score that occurs most frequently in a group of scores.
+
+Base R doesn’t provide a function for finding the mode. It does have a function called mode(), but it's for something much different. Instead, you need a package called modeest in your library. 
+
+One function in the modeest package is called mfv() (“most frequent value”),
+
+```{r mode}
+scores <- c(1,2,2,2,3,4,4,4,5,6)
+mfv(scores)
+```
+
+
