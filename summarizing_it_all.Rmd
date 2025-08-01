@@ -1,0 +1,372 @@
+---
+title: "Chapter 7  Summarizing It All"
+author: "Wendy Graham"
+date: "2025-07-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+```{r}
+install.packages("modeest")
+install.packages("moments")
+install.packages("Hmisc")
+
+library(MASS)
+library(ggplot2)
+library(modeest)
+library(moments)
+library(Hmisc)
+```
+
+## How Many?
+A fundamental descriptive statistic is the number of scores in a set of data. 
+
+length()returns the number of variables or measurements
+ncol() returns the number of variables or measurement
+nrow() returns teh number of records or cases
+
+Note: In statistics a variable is something you can observe or measure, changing from one person to another.  It is the information you're collecting. There are numerical variables like age and categorical variables like gender or height. They are usually columns in tidy data.
+
+A row in a tidy dataset represents one set of data, other words that can be used are records, case or observation. A single item or subject in a data set.
+
+```{r counting Cars93}
+
+#number of variables using length
+print(paste("There are",length(Cars93),"measurements or variables available in cars for 1993"))
+
+#number of variables using ncol
+print(paste("There are",ncol(Cars93),"measurements or variables available in cars for 1993"))
+
+#number of data points using nrow
+print(paste("There are",nrow(Cars93),"cars recorded in 1993"))
+
+#number of data points with sum boolean filter
+print(paste("There are",sum(Cars93$Origin == "USA")," American cars recorded in 1993"))
+
+print(paste("There are",sum(Cars93$Origin != "USA")," non-American cars recorded in 1993"))
+
+print(paste("There are",sum(Cars93$Origin == "USA" & Cars93$Cylinders == 4)," American 4 cylinder cars recorded in 1993"))
+
+print(paste("There are",sum(Cars93$Origin == "USA" & Cars93$Cylinders == 4)," American 4 cylinder cars recorded in 1993"))
+```
+### Other ways to filter counting
+
+```{r filtering data}
+
+#create a filtered vector with()
+Horsepower.USA.Four <- with(Cars93, Horsepower[Origin == "USA" & Cylinders == 4])
+#Horsepower.USA.Four 
+
+#use length()
+print(paste("There are",length(Horsepower.USA.Four)," American 4 cylinder cars recorded in 1993"))
+```
+
+
+## The High and the Low
+
+Max and Min values
+
+```{r max min}
+#max()
+print(paste("The maximum horse power for USA cars in 1993 is",max(Horsepower.USA.Four), "hp"))
+
+#min
+print(paste("The minimum horse power for USA cars in 1993 is",min(Horsepower.USA.Four), "hp"))
+
+#both
+print("The minimum & maximum horse power for USA cars in 1993 is")
+print(paste(range(Horsepower.USA.Four), "hp"))
+```
+
+##Living in the Moments
+
+Moments in statistics are quantitive measures that describe the shape and characteristics of a distribution. 
+
+
+### 1. First Moment – Mean (μ)
+- **Definition**: The average or expected value of a random variable.
+- **Formula**:  
+  $$ \mu = \mathbb{E}[X] = \frac{1}{n} \sum_{i=1}^{n} x_i $$
+- **Interpretation**: Measures the central location of the data.
+
+### 2. Second Moment – Variance (σ²)
+- **Definition**: The expected value of the squared deviation from the mean.
+- **Formula**:  
+  $$ \sigma^2 = \mathbb{E}[(X - \mu)^2] = \frac{1}{n} \sum_{i=1}^{n} (x_i - \mu)^2 $$
+- **Interpretation**: Measures the spread or dispersion of the data.
+
+### 3. Third Moment – Skewness
+- **Definition**: The expected value of the cubed deviation from the mean.
+- **Formula**:  
+  $$ \text{Skewness} = \frac{\mathbb{E}[(X - \mu)^3]}{\sigma^3} $$
+- **Interpretation**: Measures the asymmetry of the distribution.
+  - Positive skew: tail on the right
+  - Negative skew: tail on the left
+
+### 4. Fourth Moment – Kurtosis
+- **Definition**: The expected value of the fourth power of the deviation from the mean.
+- **Formula**:  
+  $$ \text{Kurtosis} = \frac{\mathbb{E}[(X - \mu)^4]}{\sigma^4} $$
+- **Interpretation**: Measures the "tailedness" of the distribution.
+  - High kurtosis: heavy tails (outliers)
+  - Low kurtosis: light tails
+
+
+```{r central moment}
+#function for calculating the central moment of a vector
+#x is the vector, y is the order
+cen.mom <-function(x,y){mean((x - mean(x))^y)}
+
+Horsepower.USA <- with(Cars93, Horsepower[Origin == "USA"])
+cen.mom(Horsepower.USA,2)
+cen.mom(Horsepower.USA,3)
+cen.mom(Horsepower.USA,4)
+
+
+```
+
+How do moments relate to descriptive statistics?
+
+First Moment the mean, locates the center of a histogram
+Second Moment indicates the spread of a histogram
+Third Moment central moment, indicates the symmetry or skewness of a histogram
+The fourth central moment figures how fat or thin the tail is, called kurtosis. 
+
+#Skewness
+
+Symetric Histogram: Skewness = 0
+Skewed to the right: Skewness is positive
+Skewed to the left: Skewness is negative
+
+$$
+\text{Skewness} = \frac{\sum_{i=1}^{n} (x_i - \bar{x})^3}{(n - 1) s^3} = \frac{M_3}{M_2^{1.5}}
+$$
+
+Where:
+
+- \( x_i \) = each data point  
+- \( \bar{x} \) = sample mean  
+- \( s \) = sample standard deviation  
+- \( M_3 \) = third central moment  
+- \( M_2 \) = second central moment (variance)
+
+```{r skewness}
+
+print(paste("The skewness for the horse power for USA cars in 1993 is",skewness(Horsepower.USA)))
+
+
+Horsepower.NonUSA <- with(Cars93, Horsepower[Origin != "USA"])
+
+
+print(paste("The skewness for the horse power for non-USA cars in 1993 is",skewness(Horsepower.NonUSA)))
+
+```
+
+## Horsepower histograms
+
+```{r skewness histograms}
+ggplot(Cars93, aes(x=Horsepower)) +
+     geom_histogram(color="black", fill="white",binwidth = 10)+
+     facet_wrap(~Origin)
+```
+
+## Horsepower Density Plots
+
+```{r density plot}
+ggplot(Cars93, aes(x=Horsepower)) +
+     geom_density() +
+     facet_wrap(~Origin)
+```
+
+##Kurtosis
+Kurtosis describes the shape of the data distribution, how peaked or flat it is. It helps understand how likely data is to have extreme values or whether your data is more or less risky. 
+
+Often, we subtract 3 to get excess kurtosis, so:
+
+Excess kurtosis > 0 = leptokurtic (peaked)
+Excess kurtosis < 0 = platykurtic (flat)
+Excess kurtosis = 0 = mesokurtic (normal)
+
+Risk-averse investing - 	Platykurtic (fewer surprises)
+Detecting rare events -	Leptokurtic (more sensitive to outliers)
+Balanced, normal behavior -	Mesokurtic (normal kurtosis)
+
+
+
+The formula for sample kurtosis is:
+
+$$
+\text{Kurtosis} = \frac{\sum_{i=1}^{n} (x_i - \bar{x})^4}{(n - 1) s^4} = \frac{M_4}{M_2^2}
+$$
+
+Where:
+
+- \( x_i \) = each data point  
+- \( \bar{x} \) = sample mean  
+- \( s \) = sample standard deviation  
+- \( M_4 \) = fourth central moment  
+- \( M_2 \) = second central moment (variance)
+
+```{r}
+#kurtosis by coding the formula
+cen.mom(Horsepower.USA,4)/cen.mom(Horsepower.USA,2)^2
+
+#kurtosis with function
+kurtosis(Horsepower.USA)
+kurtosis(Horsepower.NonUSA)
+
+```
+
+##Tuning in Frequency
+
+Frequencies help us understand how often different values or categories occur, get a clear picture of data distribution including:
+Patterns
+Categorical Data
+Spotting Outliers
+Prepping for Visualization
+Supporing Decision-Making
+
+For nominal variables, like Type of Automobile in Cars93, the easiest way to find the frequencies is to use the table() function
+
+```{r}
+#frequencies table
+car.types <-table(Cars93$Type)
+car.types
+
+#proportions table
+round(prop.table(car.types),2)
+
+#sum of frequencies
+margin.table(car.types)
+```
+
+## Numerical variables: hist()
+
+The graphical function hist() can create a table of frequencies.  In the code example below, Setting plot=F creates table not plot, and break=5 divides data into bins, so the continuous variable price is divided into discrete intervals. 
+
+```{r intervals for numerical data}
+
+#create frequency table using hist plot=F
+prices <- hist(Cars93$Price, plot=F, breaks=5)
+prices
+
+```
+
+Now the author of the book is using mids to find interval midpoints and counts to make a matrix of the frequencies and then a data frame. 
+
+Remember:  
+Matrices are homogeneous 2D structures, data is all the same data type - no headers
+Data frames are heterogenous 2D structures, each column can be a different data type, can have column headers
+
+```{r frequencies matrix and dataframe}
+#price matrix
+prices.matrix <- matrix(c(prices$mids,prices$counts), ncol = 2)
+
+#price dataframe
+prices.frame <- data.frame(prices.matrix)
+
+#create column names
+colnames(prices.frame) <- c("Price Midpoint (X $1,000)","Frequency")
+
+prices.frame
+```
+
+##Cumulative frequency
+Each interval's frequency is the sum of its own frequency and all the frequencies in the preceding intervals. 
+
+```{r cumulative frequencies}
+#interval frequencies
+prices$counts
+
+#culmative frequencies
+cumsum(prices$counts)
+```
+
+Plotting the cumulative frequency histogram using the orginal frequencies vector.
+
+```{r plot cumulative frequency}
+prices$counts <- cumsum(prices$counts)
+
+plot(prices, main = "Cumulative Histogram", xlab = "Price", ylab = "Cumulative Frequency")
+
+```
+
+## Step by step: The empirical cumulative distribution function
+
+The empirical cumulative distribution function (ecdf) is closely related to cumulative frequency — rather than show the frequency in an interval, however, the ecdf shows the proportion of scores that are less than or equal to each score. 
+
+Each point on the plot below represents the proportion of cars with prices less than or equal to thefalue.  The plot appears as horizontal steps with each step rising by 1/N.
+
+It is empirical because it is based on observed sample data. 
+
+```{r ecdf}
+plot(ecdf(Cars93$Price), xlab = "Price", ylab = "Fn(Price)")
+```
+
+Using ggplot for ecdf is possible too. 
+
+```{r ggplot ecdf}
+ggplot(NULL, aes(x=Cars93$Price)) +
+     geom_step(stat="ecdf") +
+     labs(x= "Price X $1,000",y = "Fn(Price)")
+```
+
+Adding a dashed vertical line at each quartile. 
+
+```{r quartile ecdf}
+#quartile vector
+price.q <-quantile(Cars93$Price)
+
+#quartile plot
+ggplot(NULL, aes(x=Cars93$Price)) +
+     geom_step(stat="ecdf") +
+     labs(x= "Price X $1,000",y = "Fn(Price)") +
+     geom_vline(aes(xintercept=price.q),linetype = "dashed")+
+     scale_x_continuous(breaks = price.q,labels = price.q)
+```
+
+##Numerical variables: stem()
+Boxplot created steam and leaf plot as a way to quickly visualize the distribution of numbers.
+
+```{r stem and leaf plot}
+#cars arranged in ascending order and rounded off to the nearest whole number
+rounded <- (round(sort(Cars93$Price),0))
+
+#display rounded numbers using cat()
+cat(rounded, fill = 50)
+
+#stem and leaf plot
+stem(Cars93$Price)
+```
+The numbers on the left are the stem, the remaining numbers are the leaves for that row. The decimal point message means multipy them by 10.
+
+The bottom row tells you that one rounded score in the data is 62, the 4 row indicates one score is 40 and the other is 48.
+
+##Summarizing a Data Frame
+The summary() functions provides you with descriptive statistics for variables.
+
+```{r variable summary Cars93 subset}
+#created a subset
+autos <- subset(Cars93, select = c(MPG.city,Type, Cylinders, Price, Horsepower))
+
+#summarize subset
+summary(autos)
+```
+
+You can also use Hmisc package to sumarize data frames. 
+```{r Hmisc}
+describe(autos)
+```
+
+
+The Hmisc function datadensity() gives graphical summaries.
+Warning from book: If you plan to use the datadensity() function, arrange for the first data frame variable to be numerical. If the first variable is categorical (and thus appears at the top of the chart), longer bars in its plot are cut off at the top.
+
+```{r datadensity}
+datadensity(autos)
+```
+
