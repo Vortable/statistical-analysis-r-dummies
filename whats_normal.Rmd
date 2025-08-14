@@ -1,0 +1,323 @@
+---
+title: "Chapter 8  What’s Normal?"
+author: "Wendy Graham"
+date: "2025-08-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Loading Libraries
+
+```{r}
+install.packages("modeest")
+install.packages("moments")
+install.packages("Hmisc")
+install.packages("ggplot")
+library(MASS)
+library(ggplot2)
+library(modeest)
+library(moments)
+library(Hmisc)
+```
+
+Estimating characteristics of a population is the job of hte statistician. Here are two assumptions that make this job easier:
+1. A specific attribute or trait is distrbuted throughout a population
+2. Most people have average or near-avaerage amount of that attribute.
+3. Progressively fewer have increasingly extreme amounts of the attribute.
+
+
+## Hitting the Curve
+
+Capturing the assumptions of attributes in a graphical way using a bell curve or normal distribution which is really a family of distributions that differ from each other based on two parameters:
+1. the mean (μ) - centre of the distribution
+2. the standard deviation (σ) - how spread out the distrubtion is. 
+
+Using normal distribution you can find some useful probabilities if you
+
+1. Can lay out a line that represents the scale of the attribute you’re measuring (the x-axis, in other words)
+2. Can indicate on the line where the mean of the measurements is
+3. Know the standard deviation
+4. Can assume that the attribute is normally distributed throughout the population
+
+## Working with Normal Distributions
+
+If you supply values for μ (the mean), σ (the standard deviation), and x (a score), the equation gives you back a value for f(x), the height of the normal distribution at x. The constants π and e are important in mathematics: π is approximately 3.1416 (the ratio of a circle’s circumference to its diameter); e is approximately 2.71828. It’s related to something called natural logarithms
+
+
+$$
+f(x) = \frac{1}{\sigma \sqrt{2\pi}} \, e^( -\frac{(x - \mu)^2}{2\sigma^2} \right)
+$$
+
+##Distributions in R
+
+The normal distribution family is one of many distribution families baked into R. Dealing with these families is intuitive. Follow these guidelines:
+
+Begin with the distribution family’s name in R (norm for the normal family, for example).
+To the beginning of the family name, add d to work with the probability density function. For the probability density function for the normal family, then, it's dnorm() — which is equivalent to the equation I just showed you.
+For the cumulative density function (cdf ), add p (pnorm(), for example).
+For quantiles, add q (qnorm(), which in mathematical terms is the inverse of the cdf).
+To generate random numbers from a distribution, add r. So rnorm() generates random numbers from a member of the normal distribution family.
+
+Normal density function
+When working with any normal distribution function, you have to let the function know which member of the normal distribution family you're interested in. You do that by specifying the mean and the standard deviation.
+
+So, if you happen to need the height of the IQ distribution for IQ = 100, here’s how to find it:
+
+```{r normal density function}
+dnorm(100,m=100,s=15)
+```
+
+## Plotting a normal curve
+
+dnorm() is useful as a tool for plotting a normal distribution. I use it along with ggplot() to draw a graph for IQ that looks a lot like what you see in
+
+```{r dnorm IQ, echo=FALSE}
+#x-values vector sequence of 121 numbers
+x.values <- seq(40,160,1)
+
+# standard deviation from 40-160
+sd.values <- seq(40,160,15)
+
+#dashed lines vectors, a vector of nine zeros
+zeros9 <- rep(0,9)
+
+#y-axis is determined by the dnorm function with mean IQ = 100 and sd =15
+ggplot(NULL,aes(x=x.values,y=dnorm(x.values,m=100,s=15))) +
+     geom_line() +
+     labs(x="IQ",y="f(IQ)")
+
+```
+In above normal distribution graph the x axis includes default values, you can place sd.values along the x axis using:
+scale_x_continuous()
+1. breaks sets the points for the x axis 
+2. labels supplies the values as labels
+scale_x_continuous(breaks=sd.values,labels = sd.values)
+
+Add vertical dashed lines to the curve using geom_segment(), aes lets you set where the lines appear
+1. x = sd.values
+2. y=zeros9
+3. xend = sd.values
+4. yend = f(x) = dnorm(sd.values, m=100,s=15)
+
+
+A final touch to improve the graph is to use scale_y_continuous() expand argument set to c(0,0) to remove the space bewteen x values and x axis
+
+```{r}
+ggplot(NULL,aes(x=x.values,y=dnorm(x.values,m=100,s=15))) +
+     geom_line() +
+     labs(x="IQ",y="f(IQ)")+
+     scale_x_continuous(breaks=sd.values,labels = sd.values) +
+     geom_segment((aes(x=sd.values,y=zeros9,xend = 
+                           sd.values,yend=dnorm(sd.values,m=100,s=15))), 
+                           linetype = "dashed")+
+scale_y_continuous(expand = c(0,0))
+```
+
+#Cumulative density function
+The cumulative density function pnorm(x,m,s) returns the probability of a score less than x in a normal distribution with mean m and standard deviation s.
+This finds the value < x
+To find the prob for a value > x, set lower.tail = FALSE
+
+```{r pnorm}
+pnorm(85,m=100,s=15)
+pnorm(85,m=100,s=15, lower.tail = FALSE)
+```
+
+At this point in the book the author details an R package that has been archived tigerstats which is a short cut to finding the pnorm across a range and plotting it.  I try to recreate the range and plot below. 
+
+1.create of subset of x  values for the shaded area
+2. calculate y associated with these values
+3. use geom_area to plot range on normal distribution graph
+
+
+A few more steps required than setting the argument graph=TRUE in tigerstats, pnormGC!
+
+```{r pnorm in a range}
+#pnormGC(c(85,100),region="between",m=100,s=15,graph=TRUE)
+
+#probablity of a score between 85 and 100
+pscore100_85 <- pnorm(100,m=100,s=15) - pnorm(85,m=100,s=15)
+
+#subset of scores between 85 and 100
+x.shaded <- x.values[x.values >= 85 & x.values <= 100]
+
+#calculate y values
+y.shaded <- dnorm(x.shaded, m = 100, s = 15)
+
+#plot shaded area with line and blue fill
+ggplot(NULL, aes(x = x.values, y = dnorm(x.values, m = 100, s = 15))) +
+  geom_line() +
+  labs(x = "IQ", y = "f(IQ)") +
+  scale_x_continuous(breaks = sd.values, labels = sd.values) +
+  geom_segment(aes(x = sd.values, y = zeros9,
+                   xend = sd.values, yend = dnorm(sd.values, m = 100, s = 15)),
+               linetype = "dashed") +
+  geom_area(data = NULL, aes(x = x.shaded, y = y.shaded),
+            fill = "skyblue", alpha = 0.5) +
+  scale_y_continuous(expand = c(0, 0))
+
+
+```
+##Plotting the cdf
+Drawing from the example of plotting the density function above, cumulative densit function is easier. 
+To plot cdf
+1. change dnorm to pnorm
+2. edit the y-axis lable
+
+```{r cdf plot }
+ggplot(NULL,aes(x=x.values,y=pnorm(x.values,m=100,s=15))) +
+     geom_line() +
+     labs(x="IQ",y="Fn(IQ)")+
+     scale_x_continuous(breaks=sd.values,labels = sd.values) +
+     geom_segment((aes(x=sd.values,y=zeros9,xend = 
+                          sd.values,yend=pnorm(sd.values,mean=100,sd=15))),
+                          linetype = "dashed")+
+     scale_y_continuous(expand=c(0,0))
+```
+
+##Quantiles of normal distributions
+
+qnorm() function is the inverse of pnorm(). Give qnorm() an area, and it returns the score that cuts off that area (to the left) in the specified normal distribution.  There is a plot in the book that uses qnormGC, I've reacreated it by adapting the code above
+
+```{r qnorm }
+
+
+
+# Parameters
+m <- 100
+s <- 15
+x.values <- seq(m - 4*s, m + 4*s, length.out = 1000)
+
+# Subset of scores below 85
+x.shaded <- x.values[x.values <= 85]
+
+# Calculate y values for shaded area
+y.shaded <- dnorm(x.shaded, mean = m, sd = s)
+
+# Create data frame for full curve
+df <- data.frame(x = x.values, y = dnorm(x.values, mean = m, sd = s))
+
+# Create data frame for shaded area
+df.shaded <- data.frame(x = x.shaded, y = y.shaded)
+
+# Plot
+ggplot(df, aes(x = x, y = y)) +
+  geom_line(color = "blue") +
+  geom_area(data = df.shaded, aes(x = x, y = y), fill = "skyblue", alpha = 0.5) +
+  geom_vline(xintercept = 85, color = "black", linetype = "solid") +
+  labs(x = "IQ", y = "Density", title = "Normal Distribution with Area Below 85 Shaded") +
+  theme_minimal()
+
+```
+Getting back to quartiles with qnorm()
+
+```{r quartriles with qnorm}
+#quartiles
+qnorm(c(0,.25,.50,.75,1.00),m=100,s=15)
+
+#rounded quartiles
+round(qnorm(c(.25,.50,.75),m=100,s=15))
+
+
+```
+
+##Plotting the cdf with quartiles
+
+To replace the standard deviation with three quartile values:
+1. Create two new vectors
+2. Place new vectors in a plot
+
+```{r cdf with quartiles}
+#create vectors
+q.values <-round(qnorm(c(.25,.50,.75),m=100,s=15))
+zeros3 <- c(0,0,0)
+
+#place vectors in a new plot
+ggplot(NULL,aes(x=x.values,y=pnorm(x.values,m=100,s=15))) +
+     geom_line() +
+     labs(x="IQ",y="Fn(IQ)")+
+     scale_x_continuous(breaks=q.values,labels = q.values) +
+     geom_segment((aes(x=q.values,y=zeros3,xend = 
+                            q.values,yend=pnorm(q.values,mean=100,sd=15))), 
+                            linetype = "dashed")+
+     scale_y_continuous(expand=c(0,0))
+
+
+
+```
+
+## Random Sampling
+
+Use rnorm() to generate random numbers. 
+
+```{r rnorm() random sampling}
+#set seed for accurate number and same sample each time
+set.seed(7637060)
+
+#generate 5 random numbers with a mean 100, sd 15
+rnorm(5,m=100,s=15)
+
+
+
+```
+
+##A Distinguised Family Member
+
+z-scores standardizes sets so you can compare more than one set of scores. (Babe Ruth example in chapter 6)
+z=(x-μ)/σ
+
+Any set of z-scores has a mean of 0 and a standard deviation of 1.  
+z-scores are not guarenteed to be a normal distribution.
+
+##Working with the standard normal distribution in R
+Not specifying mean or standard deviation in R's norm functions defaults to z-scores, 0 and 1.  Using these functions means your working with z-scores by default - baked in simplicity. 
+
+```{r default z-values}
+
+dnorm(0)
+pnorm(0)
+qnorm(c(.25,.50,.75))
+rnorm(5)
+
+```
+
+#Plotting the standard norma distribution
+To plot the standard normal distribution, create a couple of vectors. 
+```{r z-values normal plot }
+z.values <-seq(-4,4,.01)
+z.sd.values <- seq(-4,4,1)
+
+#plot
+ggplot(NULL,aes(x=z.values,y=dnorm(z.values))) +
+     geom_line() +
+     labs(x="z",y="f(z)")+
+     scale_x_continuous(breaks=z.sd.values,labels=z.sd.values) +
+     geom_segment((aes(x=z.sd.values,y=zeros9,xend = 
+                           z.sd.values,yend=dnorm(z.sd.values))),linetype = 
+                           "dashed")+
+     scale_y_continuous(expand=c(0,0))
+
+```
+##cdf Function plot for z-scores
+I leave it to you as an exercise to plot the cumulative density function for the standard normal distribution.
+
+```{r cdf function plot}
+
+q.values <-round(qnorm(c(.25,.50,.75)))
+zeros3 <- c(0,0,0)
+
+#place vectors in a new plot
+ggplot(NULL,aes(x=z.values,y=pnorm(z.values))) +
+     geom_line() +
+     labs(x="IQ",y="Fn(IQ)")+
+     scale_x_continuous(breaks=q.values,labels = q.values) +
+     geom_segment((aes(x=q.values,y=zeros3,xend = 
+                            q.values,yend=pnorm(q.values))), 
+                            linetype = "dashed")+
+     scale_y_continuous(expand=c(0,0))
+
+```
+
