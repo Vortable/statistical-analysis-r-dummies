@@ -1,0 +1,236 @@
+---
+title: 'The Confidence Game: Estimation'
+author: "Wendy Graham"
+date: "2025-08-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Load Libraries
+
+
+```{r install}
+install.packages("modeest")
+install.packages("moments")
+install.packages("Hmisc")
+install.packages("tidyverse")
+
+
+library(MASS)
+library(modeest)
+library(moments)
+library(Hmisc)
+library(tidyverse)
+```
+
+## Population and sample
+
+Population large group, sample smaller group from population. Measure a sample member attritbute or trait to calculate and summarize the sample.  You can also use the sample to estimate the populations parameters. This chapter is about that estimate and how much confidence you have in it. 
+
+μ = μ
+
+In general, a sampling distribution is the distribution of all possible values of a statistic for a given sample size.
+
+A sampling distribution has mean and standard deviation like any other set of scores.
+
+
+
+
+
+
+##Understanding Sampling Distributions
+
+Pulling random samples and measuring means leads to the sampling distribution of mean. 
+The standard deviation of a sampling mean is *standard error of the mean*
+
+## An EXTREMELY Important Idea:  The Central Limit Theorem
+
+Typically you do not get to draw infinite means from a sample, in fact you usually only draw one sample and calculate sample stats. 
+
+*The Central Limit Theorem*
+
+* The sampling distribution of mean is approx normal distribution if the sample size is large enough, usually > 30
+* The mean of the sampling distribution = mean of population
+* The sd of the sampling distribution of the mean,  *standard error of the mean*, = to pop sd/sqrt of the sample size
+
+
+##(Approximately) Simulating the central limit theorem
+
+Simulated sampling distribution with R 
+
+
+```{r sampling distribution }
+# all possible scores
+values <- c(1,2,3)
+
+#probablities of sampling each score
+probabilities <- c(1/3,1/3,1/3)
+
+#vector to hold 600 sample means
+smpl.means <- NULL
+
+#set seed
+set.seed(7637060)
+
+# draw a sample and append, creating a sample means vector
+for(i in 1:600){
+    smpl <-sample(x = values,prob = probabilities,
+                               size = 3,replace=TRUE)
+    smpl.means <- append(smpl.means, mean(smpl))
+}
+
+```
+
+## Plot sampling distribution of the mean
+
+```{r plot sample means}
+
+ggplot(NULL,aes(x=smpl.means)) +
+     geom_histogram()
+
+```
+
+## Cleaning up the plot
+
+1. list the rounded unique values on the x axis
+2. Re-scale the x axis to be continous
+3. Eliminate the space between x-axis and x axis values
+4. Label the x axis
+
+```{r cleaned up sample means plot}
+
+#find unique values for x axis and round to 2 decimals
+m.values <-round(unique(smpl.means),2)
+
+ggplot(NULL,aes(x=smpl.means)) +
+     geom_histogram()+
+     scale_x_continuous(breaks=m.values,label=m.values)+
+     scale_y_continuous(expand = c(0,0)) +
+     labs(x=expression(bar(X)),y=expression
+                 (frequency(bar(X))))
+```
+##Predictions of the central limit theorem
+
+How do the characteristics of the sampling distribution match up with what is predicted by the central limit theorem?
+
+Deriving predictions starts with the population. 
+
+X - discrete random variable
+pr(X) - probablity of x in a population
+
+E(X) - Expected Value - mean of the discrete random variable 
+
+```{r expected value}
+E.values <- sum(values*probabilities)
+E.values
+```
+
+Finding the variance of X by subracting E(X) from each X, sqaure each deviation, multiply each squared devation but the probability of X and add the products!
+
+```{r variance of x}
+var.values <- sum((values-E.values)^2*probabilities)
+var.values
+```
+
+Standard deviation is the sqrt root of variance
+
+```{r standard deviation}
+sd.values <- sqrt(var.values)
+sd.values
+
+```
+
+Testing the central limit theorem that mean is 2 and sd is .4714
+
+```{r central limit theorem test}
+mean(smpl.means)
+sd(smpl.means)
+```
+
+##Confidence:  It Has Its Limits!
+How much confidence can you have in your estimates?
+ 
+##Case Study from the Book
+The FarBlonJet Corporation manufactures navigation systems. (Corporate motto: “Taking a trip? Get FarBlonJet.”) The company has developed a new battery to power its portable model. To help market this system, FarBlonJet wants to know how long, on average, each battery lasts before it burns out.
+
+The FarBlonJet employees like to estimate that average with 95 percent confidence. They test a sample of 100 batteries and find that the sample mean is 60 hours, with a standard deviation of 20 hours. The central limit theorem, remember, says that with a large enough sample (30 or more), the sampling distribution of the mean approximates a normal distribution.
+
+
+The sample size, N, is 100. What about σ? That’s unknown, so you have to estimate it. If you know σ, that would mean you know μ, and establishing confidence limits would be unnecessary.
+
+The best estimate of σ is the standard deviation of the sample. In this case, that’s 20. This leads to an estimate of the standard error of the mean.
+
+
+The best estimate of the population mean is the sample mean: 60. Armed with this information — estimated mean, estimated standard error of the mean, normal distribution — you can envision the sampling distribution of the mean.
+
+Once you have a sampling distribution, you can establish 95 percent confidence limits for the mean. 
+
+For this we use z-scores to standardize the observations. 
+
+```{r assign known values}
+mean.battery <- 60
+sd.battery <- 20
+N <- 100
+error <- qnorm(.025,lower.tail=FALSE)*sd.battery/sqrt(N)
+
+```
+
+
+Calculate the limits
+
+```{r upper and lower confidence limits}
+
+lower <- mean.battery - error
+upper <- mean.battery + error
+lower
+upper
+
+
+```
+
+##Fit to a t
+
+Smaller samples can create a few problems
+*larger standard error
+*you don't get to use the standard normal distribution
+
+Use t-distribution instead! 
+
+this distributions uses degrees of freedom parameter
+
+Greater df =  t distribution is closer to normal. 
+
+df = N-1
+
+It is important to find the right df.  You can do so my finding the value that cuts off the upper 2.5 percent of the area in the upper tail of the distribution. Then multiply that value by the standard error.
+
+Add the result to the mean to get the upper confidence limit; subtract the result from the mean to get the lower confidence limit.
+
+R provides dt() (density function), pt() (cumulative density function), qt() (quantile), and rt() (random number generation) for working with the t-distribution. For the confidence intervals, I use qt().
+
+In the FarBlonJet batteries example:
+```{r}
+mean.battery <- 60
+sd.battery <- 20
+N <- 25
+error <- qt(.025,N-1,lower.tail=FALSE)*sd.battery/sqrt(N)
+lower <- mean.battery - error
+upper <- mean.battery + error
+
+lower
+upper
+```
+
+If you have the raw data, you can do a t test to generate the confidence intervals instead.
+
+```{r t test}
+battery.data <- c(82,64,68,44,54,47,50,85,51,41,61,84, 
+                  53,83,91,43,35,36,33,87,90,86,49,37,48)
+
+t.test(battery.data, conf.level=.90)
+```
+
+
